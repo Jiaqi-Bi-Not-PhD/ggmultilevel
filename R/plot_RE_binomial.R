@@ -8,9 +8,12 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
                                              plot_title = NULL,
                                              x_breaks = NULL, y_breaks = NULL,
                                              x_num_size = 10, y_num_size = 10) {
-  extract_model(model = model, data = data,
+  ext_mod <- extract_model(model = model, data = data,
                 predictor = predictor, outcome = outcome,
                 grouping_var = grouping_var)
+  fixed_intercept <- ext_mod$fixed_intercept
+  fixed_slope <- ext_mod$fixed_slope
+  random_lines <- ext_mod$random_lines
   ## X LIMITS ##
   predictor_values_data <- data[[predictor]]
   if (is.null(x_limits)) {
@@ -89,8 +92,8 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
       )
     ## Y LIMITS - Log Odds ##
     if (is.null(y_limits)) {
-      y_limits <- c(0, max(prediction_df$Outcome, na.rm = TRUE))
-    }
+      y_limits <- c(min(prediction_df$Outcome, na.rm = TRUE), max(prediction_df$Outcome, na.rm = TRUE))
+    } # log odds can be negative!
     if (is.null(y_label)) {
       y_label <- "Log Odds"
     }
