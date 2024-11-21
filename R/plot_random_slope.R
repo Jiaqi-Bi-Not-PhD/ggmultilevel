@@ -1,16 +1,16 @@
 ##########################################################################################
 ######################## Truncated at minimum y and maximum y ############################
 ##########################################################################################
-plot_random_slope <- function(model, data, predictor, outcome, grouping_var,
+plot_lmer <- function(model, data, predictor, outcome, grouping_var,
                               x_limits = NULL, y_limits = NULL,
                               x_label = NULL, y_label = NULL,
                               plot_title = NULL,
                               x_breaks = NULL, y_breaks = NULL,
                               x_num_size = 10, y_num_size = 10) {
 
-  random_lines <- extract_model(model = model, data = data,
-                                predictor = predictor, outcome = outcome,
-                                grouping_var = grouping_var)
+  extract_model(model = model, data = data,
+                predictor = predictor, outcome = outcome,
+                grouping_var = grouping_var)
   ## X LIMITS ##
   predictor_values_data <- data[[predictor]]
   if (is.null(x_limits)) {

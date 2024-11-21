@@ -5,7 +5,7 @@ REplot <- function(model, data, predictor, outcome, grouping_var,
                                     family,
                                     ...) {
   if (family == "binomial") {
-    plot <- plot_random_slope_glmer_binomial(
+    plot <- plot_glmer_binomial(
       model = model,
       data = data,
       predictor = predictor,
@@ -14,7 +14,7 @@ REplot <- function(model, data, predictor, outcome, grouping_var,
       ...
     )
   } else if (family == "poisson") {
-    plot <- plot_random_slope_glmer_poisson(
+    plot <- plot_glmer_poisson(
       model = model,
       data = data,
       predictor = predictor,
@@ -23,7 +23,7 @@ REplot <- function(model, data, predictor, outcome, grouping_var,
       ...
     )
   } else if (is.null(family)) {
-    plot <- plot_random_slope(
+    plot <- plot_lmer(
       model = model,
       data = data,
       predictor = predictor,

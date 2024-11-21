@@ -45,5 +45,4 @@ extract_model <- function(model, data, predictor, outcome, grouping_var) {
       Intercept = fixed_intercept + RandomIntercept,
       Slope = fixed_slope + RandomSlope  # mutate all intercepts and slopes to incorporate random effects
     )
-  return(random_lines)
 }

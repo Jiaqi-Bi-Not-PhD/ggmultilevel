@@ -8,9 +8,9 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
                                              plot_title = NULL,
                                              x_breaks = NULL, y_breaks = NULL,
                                              x_num_size = 10, y_num_size = 10) {
-  random_lines <- extract_model(model = model, data = data,
-                                predictor = predictor, outcome = outcome,
-                                grouping_var = grouping_var)
+  extract_model(model = model, data = data,
+                predictor = predictor, outcome = outcome,
+                grouping_var = grouping_var)
   ## X LIMITS ##
   predictor_values_data <- data[[predictor]]
   if (is.null(x_limits)) {

@@ -12,7 +12,9 @@ LazyData: true
 Imports: 
     dplyr,
     ggplot2,
+    haven,
     lme4,
+    lmerTest,
     purrr,
     rlang,
     scales,
