@@ -8,7 +8,8 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
                                 plot_title = NULL,
                                 x_breaks = NULL, y_breaks = NULL,
                                 x_num_size = 10, y_num_size = 10,
-                                title_size = 12, text_size = 12) {
+                                title_size = 12, text_size = 12)
+  +{
   ext_mod <- extract_model(model = model, data = data,
                            predictor = predictor, outcome = outcome,
                            grouping_var = grouping_var)
