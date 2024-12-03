@@ -2,18 +2,19 @@
 ############################## Binomial multilevel plot ##################################
 ##########################################################################################
 plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
-                                             y_scale = "probability",
-                                             x_limits = NULL, y_limits = NULL,
-                                             x_label = NULL, y_label = NULL,
-                                             plot_title = NULL,
-                                             x_breaks = NULL, y_breaks = NULL,
-                                             x_num_size = 10, y_num_size = 10) {
+                                y_scale = "probability",
+                                x_limits = NULL, y_limits = NULL,
+                                x_label = NULL, y_label = NULL,
+                                plot_title = NULL,
+                                x_breaks = NULL, y_breaks = NULL,
+                                x_num_size = 10, y_num_size = 10) {
   ext_mod <- extract_model(model = model, data = data,
-                predictor = predictor, outcome = outcome,
-                grouping_var = grouping_var)
+                           predictor = predictor, outcome = outcome,
+                           grouping_var = grouping_var)
   fixed_intercept <- ext_mod$fixed_intercept
   fixed_slope <- ext_mod$fixed_slope
   random_lines <- ext_mod$random_lines
+
   ## X LIMITS ##
   predictor_values_data <- data[[predictor]]
   if (is.null(x_limits)) {
@@ -31,24 +32,43 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
   predictor_df <- data.frame(predictor_range)
   colnames(predictor_df) <- predictor
 
+  ## Prepare prediction_df by crossing random_lines with predictor_df ##
   prediction_df <- random_lines |>
-    crossing(predictor_df) |>
-    mutate(
-      Eta = Intercept + Slope * .data[[predictor]] # here the beta has incorporated the random effects
-    )
+    crossing(predictor_df)
+
+  ## Add the grouping variable ##
+  prediction_df[[grouping_var]] <- prediction_df$Group
+
+  ## Ensure grouping variable is a factor with the same levels as in the model ##
+  group_levels <- levels(getME(model, "flist")[[grouping_var]])
+  prediction_df[[grouping_var]] <- factor(prediction_df[[grouping_var]], levels = group_levels)
+
+  ## Use predict() to calculate Eta ##
+  # Include all necessary variables in newdata
+  newdata_random <- prediction_df %>%
+    select(all_of(c(predictor, grouping_var)))
+
+  prediction_df$Eta <- predict(model, newdata = newdata_random, re.form = NULL, type = "link")
+
+  ## For fixed effects only ##
+  fixed_line_df <- data.frame(
+    predictor = predictor_range
+  )
+
+  ## Ensure fixed_line_df has the predictor variable with correct name
+  colnames(fixed_line_df) <- predictor
+
+  # Use predict for fixed effects only
+  fixed_line_df$Eta <- predict(model, newdata = fixed_line_df, re.form = NA, type = "link")
 
   ## Binomial Link - Y scales ##
   ## probability, odds, or log odds ##
-
   if (y_scale == "probability") { # default is prob
     prediction_df <- prediction_df |>
       mutate(
         Outcome = plogis(Eta)
       )
-    fixed_line_df <- data.frame(
-      predictor = predictor_range,
-      Eta = fixed_intercept + fixed_slope * predictor_range
-    ) |>
+    fixed_line_df <- fixed_line_df |>
       mutate(
         Outcome = plogis(Eta)
       )
@@ -59,15 +79,12 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
     if (is.null(y_label)) {
       y_label <- "Probability"
     }
-  } else if (y_scale == "odds") { # Odds `if` start
+  } else if (y_scale == "odds") {
     prediction_df <- prediction_df |>
       mutate(
         Outcome = exp(Eta)
       )
-    fixed_line_df <- data.frame(
-      predictor = predictor_range,
-      Eta = fixed_intercept + fixed_slope * predictor_range
-    ) |>
+    fixed_line_df <- fixed_line_df |>
       mutate(
         Outcome = exp(Eta)
       )
@@ -77,28 +94,24 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
     }
     if (is.null(y_label)) {
       y_label <- "Odds"
-    } # Odds `if` ended
-  } else if (y_scale == "log odds") { # log odds `if` ended
+    }
+  } else if (y_scale == "log odds") {
     prediction_df <- prediction_df |>
       mutate(
         Outcome = Eta
       )
-    fixed_line_df <- data.frame(
-      predictor = predictor_range,
-      Eta = fixed_intercept + fixed_slope * predictor_range
-    ) |>
+    fixed_line_df <- fixed_line_df |>
       mutate(
         Outcome = Eta
       )
     ## Y LIMITS - Log Odds ##
     if (is.null(y_limits)) {
       y_limits <- c(min(prediction_df$Outcome, na.rm = TRUE), max(prediction_df$Outcome, na.rm = TRUE))
-    } # log odds can be negative!
+    }
     if (is.null(y_label)) {
       y_label <- "Log Odds"
     }
-  } # log odds `if` ended
-  else {
+  } else {
     stop("For binomial family, y_scale must be 'probability', 'odds', or 'log odds'.")
   }
 
@@ -130,7 +143,7 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
     ) +
     geom_line(
       data = fixed_line_df,
-      aes(x = predictor, y = Outcome),
+      aes(x = .data[[predictor]], y = Outcome),
       color = "black",
       size = 1
     ) +
@@ -150,7 +163,7 @@ plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
       x = x_label,
       y = y_label
     ) +
-    theme( ## this can be expanded to many options, as long as we can wrap them up ##
+    theme(
       text = element_text(size = 12),
       plot.title = element_text(
         size = 12,

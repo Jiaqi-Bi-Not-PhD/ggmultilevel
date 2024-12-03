@@ -1,15 +1,15 @@
 ##########################################################################################
 ################################ Beta multilevel plot ####################################
 ##########################################################################################
-plot_glmer_binomial <- function(model, data, predictor, outcome, grouping_var,
-                                y_scale = "probability",
+plot_glmer_beta <- function(model, data, predictor, outcome, grouping_var,
+                                y_scale = NULL,
                                 x_limits = NULL, y_limits = NULL,
                                 x_label = NULL, y_label = NULL,
                                 plot_title = NULL,
                                 x_breaks = NULL, y_breaks = NULL,
                                 x_num_size = 10, y_num_size = 10,
                                 title_size = 12, text_size = 12)
-  +{
+  {
   ext_mod <- extract_model(model = model, data = data,
                            predictor = predictor, outcome = outcome,
                            grouping_var = grouping_var)

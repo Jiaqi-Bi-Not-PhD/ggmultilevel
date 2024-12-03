@@ -2,11 +2,11 @@
 ######################## Truncated at minimum y and maximum y ############################
 ##########################################################################################
 plot_lmer <- function(model, data, predictor, outcome, grouping_var,
-                              x_limits = NULL, y_limits = NULL,
-                              x_label = NULL, y_label = NULL,
-                              plot_title = NULL,
-                              x_breaks = NULL, y_breaks = NULL,
-                              x_num_size = 10, y_num_size = 10) {
+                      x_limits = NULL, y_limits = NULL,
+                      x_label = NULL, y_label = NULL,
+                      plot_title = NULL,
+                      x_breaks = NULL, y_breaks = NULL,
+                      x_num_size = 10, y_num_size = 10) {
 
   ext_mod <- extract_model(model = model, data = data,
                            predictor = predictor, outcome = outcome,
@@ -14,6 +14,7 @@ plot_lmer <- function(model, data, predictor, outcome, grouping_var,
   fixed_intercept <- ext_mod$fixed_intercept
   fixed_slope <- ext_mod$fixed_slope
   random_lines <- ext_mod$random_lines
+
   ## X LIMITS ##
   predictor_values_data <- data[[predictor]]
   if (is.null(x_limits)) {
@@ -24,47 +25,71 @@ plot_lmer <- function(model, data, predictor, outcome, grouping_var,
     x_min <- x_limits[1]
     x_max <- x_limits[2]
   }
-
-  ## Y LIMITS ##
-  outcome_values_data <- data[[outcome]]
-  if (is.null(y_limits)) {
-    y_min <- floor(min(outcome_values_data, na.rm = TRUE))
-    y_max <- ceiling(max(outcome_values_data, na.rm = TRUE))
-    y_limits <- c(y_min, y_max)
-  } else {
-    y_min <- y_limits[1]
-    y_max <- y_limits[2]
-  }
-
   if (is.null(x_breaks)) {
     x_breaks <- pretty(c(x_min, x_max))
   }
+  predictor_range <- seq(x_min, x_max, length.out = 100)
+  predictor_df <- data.frame(predictor_range)
+  colnames(predictor_df) <- predictor
+
+  ## Prepare prediction_df by crossing random_lines with predictor_df ##
+  prediction_df <- random_lines |>
+    crossing(predictor_df)
+
+  ## Add the grouping variable ##
+  prediction_df[[grouping_var]] <- prediction_df$Group
+
+  ## Ensure grouping variable is a factor with the same levels as in the model ##
+  group_levels <- levels(getME(model, "flist")[[grouping_var]])
+  prediction_df[[grouping_var]] <- factor(prediction_df[[grouping_var]], levels = group_levels)
+
+  ## Use predict() to calculate Eta ##
+  # Include all necessary variables in newdata
+  newdata_random <- prediction_df |>
+    select(all_of(c(predictor, grouping_var)))
+
+  prediction_df$Eta <- predict(model, newdata = newdata_random, re.form = NULL, type = "link")
+
+  ## For fixed effects only ##
+  fixed_line_df <- data.frame(
+    predictor = predictor_range
+  )
+  colnames(fixed_line_df) <- predictor
+
+  ## prediction for Fixed effects only ##
+  fixed_line_df$Eta <- predict(model, newdata = fixed_line_df, re.form = NA, type = "link")
+  prediction_df <- prediction_df |>
+    mutate(
+      Outcome = Eta
+    )
+  fixed_line_df <- fixed_line_df |>
+    mutate(
+      Outcome = Eta
+    )
+  ## Y LIMITS ##
+    outcome_values_data <- data[[outcome]]
+    if (is.null(y_limits)) {
+      y_min <- floor(min(outcome_values_data, na.rm = TRUE))
+      y_max <- ceiling(max(outcome_values_data, na.rm = TRUE))
+      y_limits <- c(y_min, y_max)
+    } else {
+      y_min <- y_limits[1]
+      y_max <- y_limits[2]
+    }
+    if (is.null(y_label)) {
+      y_label <- outcome
+    }
+
+  ## Y BREAKS ##
   if (is.null(y_breaks)) {
+    y_min <- y_limits[1]
+    y_max <- y_limits[2]
     y_breaks <- pretty(c(y_min, y_max))
   }
-
-  ## Create prediction data frame ##
-  prediction_df <- random_lines |>
-    crossing(predictor_range = seq(x_min, x_max, length.out = 100)) |>
-    mutate(
-      predictor = predictor_range,
-      outcome = Intercept + Slope * predictor_range
-    ) |>
-    filter(outcome >= y_min & outcome <= y_max)  #% Filter outcome values to be within y limits
-
-  ## Fixed Line Data Frame ##
-  fixed_line_df <- data.frame(
-    predictor = seq(x_min, x_max, length.out = 100),
-    outcome = fixed_intercept + fixed_slope * seq(x_min, x_max, length.out = 100)
-  ) |>
-    filter(outcome >= y_min & outcome <= y_max)  #% Filter outcome values to be within y limits
 
   ## X & Y LABELS ##
   if (is.null(x_label)) {
     x_label <- predictor
-  }
-  if (is.null(y_label)) {
-    y_label <- outcome
   }
 
   ## TITLE ##
@@ -76,14 +101,14 @@ plot_lmer <- function(model, data, predictor, outcome, grouping_var,
   plot <- ggplot() +
     geom_line(
       data = prediction_df,
-      aes(x = predictor, y = outcome, group = Group),
+      aes(x = .data[[predictor]], y = Outcome, group = Group),
       color = "grey",
       linetype = "dashed",
       alpha = 0.5
     ) +
     geom_line(
       data = fixed_line_df,
-      aes(x = predictor, y = outcome),
+      aes(x = .data[[predictor]], y = Outcome),
       color = "black",
       size = 1
     ) +
@@ -103,7 +128,7 @@ plot_lmer <- function(model, data, predictor, outcome, grouping_var,
       x = x_label,
       y = y_label
     ) +
-    theme( ## this can be expanded to many options, as long as we can wrap them up ##
+    theme(
       text = element_text(size = 12),
       plot.title = element_text(
         size = 12,
@@ -127,9 +152,8 @@ plot_lmer <- function(model, data, predictor, outcome, grouping_var,
       axis.line = element_line(color = "black", linewidth = 0.5)
     )
   return(plot)
+
 }
-
-
 
 
 
