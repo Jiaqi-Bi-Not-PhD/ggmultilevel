@@ -1,5 +1,6 @@
 plot_glmm_interact_contcat <- function(model, data, predictor_cont, predictor_cat, outcome, grouping_var,
-                                       family = "gaussian", y_scale = "response", include_random = TRUE,
+                                       family = "gaussian", y_scale = "response",
+                                       include_random = TRUE,
                                        x_limits = NULL, y_limits = NULL,
                                        x_label = NULL, y_label = NULL,
                                        plot_title = NULL,

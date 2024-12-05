@@ -7,10 +7,9 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
                       x_num_size = 10, y_num_size = 10) {
 
 
-  # Check if the model is from glmmTMB
+  ## glmmTMB - Beta reg check
   is_glmmTMB <- inherits(model, "glmmTMB")
 
-  # Extract model components using the custom extract_model function
   ext_mod <- extract_model(model = model, data = data,
                            predictor = predictor, outcome = outcome,
                            grouping_var = grouping_var)
