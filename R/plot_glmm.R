@@ -35,7 +35,7 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   colnames(predictor_df) <- predictor
 
   ## Prepare prediction_df by crossing random_lines with predictor_df ##
-  prediction_df <- random_lines %>%
+  prediction_df <- random_lines |>
     crossing(predictor_df)
 
   ## Add the grouping variable ##
@@ -51,7 +51,7 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
 
   ## Use predict() to calculate Eta ##
   # Include all necessary variables in newdata
-  newdata_random <- prediction_df %>%
+  newdata_random <- prediction_df |>
     select(all_of(c(predictor, grouping_var)))
 
   # Predict Eta using the appropriate method
@@ -80,11 +80,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
       y_scale <- "probability"
     }
     if (y_scale == "probability") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = plogis(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = plogis(Eta)
         )
@@ -95,11 +95,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- "Probability"
       }
     } else if (y_scale == "odds") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = exp(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = exp(Eta)
         )
@@ -110,11 +110,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- "Odds"
       }
     } else if (y_scale == "log odds") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = Eta
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = Eta
         )
@@ -132,11 +132,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
       y_scale <- "count"
     }
     if (y_scale == "count") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = exp(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = exp(Eta)
         )
@@ -147,11 +147,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- "Count"
       }
     } else if (y_scale == "log count") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = Eta
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = Eta
         )
@@ -165,11 +165,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
       stop("For Poisson family, y_scale must be 'count' or 'log count'.")
     }
   } else if (family == "gaussian") {
-    prediction_df <- prediction_df %>%
+    prediction_df <- prediction_df |>
       mutate(
         Outcome = Eta
       )
-    fixed_line_df <- fixed_line_df %>%
+    fixed_line_df <- fixed_line_df |>
       mutate(
         Outcome = Eta
       )
@@ -185,11 +185,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
       y_scale <- "response"
     }
     if (y_scale == "response") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = exp(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = exp(Eta)
         )
@@ -200,11 +200,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- outcome
       }
     } else if (y_scale == "log response") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = Eta
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = Eta
         )
@@ -223,11 +223,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
     }
     if (y_scale == "probability") {
       # For beta regression, the link function is often 'logit'
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = plogis(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = plogis(Eta)
         )
@@ -238,11 +238,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- "Probability"
       }
     } else if (y_scale == "logit") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = Eta
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = Eta
         )
@@ -260,11 +260,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
       y_scale <- "count"
     }
     if (y_scale == "count") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = exp(Eta)
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = exp(Eta)
         )
@@ -275,11 +275,11 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
         y_label <- "Count"
       }
     } else if (y_scale == "log count") {
-      prediction_df <- prediction_df %>%
+      prediction_df <- prediction_df |>
         mutate(
           Outcome = Eta
         )
-      fixed_line_df <- fixed_line_df %>%
+      fixed_line_df <- fixed_line_df |>
         mutate(
           Outcome = Eta
         )
