@@ -1,12 +1,18 @@
 Package: ggmultilevel
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: A visualization package for multilevel models (Beta version)
+Version: 1.0.0
+Authors@R: c(
+person("Jiaqi", "Bi", email = "jbi23@uwo.ca", role = c("cre", "aut"), comment = c(ORCID = "0009-0001-9216-9932")),
+person("Hanrui", "Dou", role = "ctb"),
+person("Yue", "Zhang", role = "ctb"),
+person("Yun-Hee", "Choi", role = "ctb"),
+person("Osvaldo", "Espin-Garcia", role = "ctb"),
+person("Marc O.", "Martel", role = "fnd")
+)
+Maintainer: Jiaqi Bi <jbi23@uwo.ca>
+Description: The package provides easy visualizations on the multilevel models without writing hundreds of code.
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Imports: 
@@ -19,4 +25,6 @@ Imports:
     purrr,
     rlang,
     scales,
+    stats,
     tidyr
+RoxygenNote: 7.3.2

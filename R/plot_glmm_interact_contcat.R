@@ -1,3 +1,30 @@
+#' Plot the interaction between a categorical and a continuous under multilevel models
+#'
+#' @param model Your multilevel model, should be `lmer`, `glmer` or `glmmTMB`
+#' @param data Your data
+#' @param predictor_cont The continuous predictor of the model, in string form
+#' @param predictor_cat The categorical predictor of the model, in string form
+#' @param outcome The outcome of the model
+#' @param grouping_var The grouping/cluster variable, in string form
+#' @param family Declare your family distribution, default is `"gaussian"`
+#' @param y_scale Declare your y-axis scale, default is `"response"` which is identical to the model response, e.g., `"odds ratio"` for binomial link
+#' @param include_random A logical argument, `TRUE` to include random effects when plotting
+#' @param x_limits Set the x-axis minimum and maximum value
+#' @param y_limits Set the y-axis minimum and maximum value
+#' @param x_label Set the x-axis name
+#' @param y_label Set the y-axis name
+#' @param plot_title Set the plot title
+#' @param x_breaks Set the breaks of x-axis
+#' @param y_breaks Set the breaks of y-axis
+#' @param x_num_size Set the x-axis value size
+#' @param y_num_size Set the y-axis value size
+#' @param colors Set the colors to distinguish categorical variables
+#' @param legend_name Set the legend title
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_glmm_interact_contcat <- function(model, data, predictor_cont, predictor_cat, outcome, grouping_var,
                                        family = "gaussian", y_scale = "response",
                                        include_random = TRUE,
