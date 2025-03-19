@@ -3,12 +3,7 @@ Type: Package
 Title: A visualization package for multilevel models (Beta version)
 Version: 1.0.0
 Authors@R: c(
-person("Jiaqi", "Bi", email = "jbi23@uwo.ca", role = c("cre", "aut"), comment = c(ORCID = "0009-0001-9216-9932")),
-person("Hanrui", "Dou", role = "ctb"),
-person("Yue", "Zhang", role = "ctb"),
-person("Yun-Hee", "Choi", role = "ctb"),
-person("Osvaldo", "Espin-Garcia", role = "ctb"),
-person("Marc O.", "Martel", role = "fnd")
+person("Jiaqi", "Bi", email = "jbi23@uwo.ca", role = c("cre", "aut"), comment = c(ORCID = "0009-0001-9216-9932"))
 )
 Maintainer: Jiaqi Bi <jbi23@uwo.ca>
 Description: The package provides easy visualizations on the multilevel models without writing hundreds of code.
