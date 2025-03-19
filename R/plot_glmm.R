@@ -222,7 +222,6 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   }
 
   # 11) Build final ggplot
-  library(ggplot2)
   p <- ggplot() +
     geom_line(
       data = df_random,
