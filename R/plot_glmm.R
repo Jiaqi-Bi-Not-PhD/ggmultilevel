@@ -29,19 +29,19 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
                       x_breaks = NULL, y_breaks = NULL,
                       x_num_size = 10, y_num_size = 10) {
 
-  # 1) Check if it's glmmTMB (vs. lme4)
+  ## 1) Check if it's glmmTMB or lme4
   is_glmmTMB <- inherits(model, "glmmTMB")
 
-  # 2) Identify the levels of the chosen grouping variable
+  ## 2) Identify the levels of the chosen grouping variable
   if (is_glmmTMB) {
     group_levels <- levels(model$frame[[grouping_var]])
   } else {
     group_levels <- levels(lme4::getME(model, "flist")[[grouping_var]])
   }
-  # Ensure 'grouping_var' in 'data' is a factor with the same levels
+  ## Ensure 'grouping_var' in 'data' is a factor with the same levels
   data[[grouping_var]] <- factor(data[[grouping_var]], levels = group_levels)
 
-  # 3) Determine range for the chosen predictor (x-axis)
+  ## 3) Determine range for the chosen predictor (x-axis)
   predictor_vals <- data[[predictor]]
   if (is.null(x_limits)) {
     x_min <- floor(min(predictor_vals, na.rm = TRUE))
@@ -56,16 +56,16 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   }
   predictor_seq <- seq(x_min, x_max, length.out = 100)
 
-  # 4) Identify all other predictors in the model & assign “typical” values
-  #    (we skip the chosen predictor + grouping_var)
+  ## 4) Identify all other predictors in the model & assign “typical” values
+  ##    (we skip the chosen predictor + grouping_var)
   all_predictors <- attr(terms(model), "term.labels")  # all RHS terms
   other_vars <- setdiff(all_predictors, c(predictor, grouping_var))
 
-  # Build a named list of typical values for these other variables
+  ## Build a named list of typical values for these other variables
   typical_values <- lapply(other_vars, function(v) {
     col_data <- data[[v]]
     if (is.numeric(col_data)) {
-      mean(col_data, na.rm = TRUE)  # or median, if you prefer
+      mean(col_data, na.rm = TRUE)  # or median
     } else if (is.factor(col_data)) {
       levels(col_data)[1]          # pick first factor level
     } else {
@@ -74,8 +74,8 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   })
   names(typical_values) <- other_vars
 
-  # 5) Build a data frame for random (full) predictions
-  #    Expand each predictor value across all grouping-levels
+  ## 5) Build a data frame for random (full) predictions
+  ##    Expand each predictor value across all grouping-levels
   df_random <- expand.grid(
     seq_idx = seq_along(predictor_seq),
     group_idx = seq_along(group_levels)
@@ -85,18 +85,18 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   df_random$seq_idx <- NULL
   df_random$group_idx <- NULL
 
-  # Add the typical values for all other variables
+  ## Add the typical values for all other variables
   for (v in other_vars) {
     df_random[[v]] <- typical_values[[v]]
   }
 
-  # Predict the linear predictor for the random-effects-included model
+  ## Predict the linear predictor for the random-effects-included model
   df_random$Eta <- predict(
     model, newdata = df_random, type = "link", re.form = NULL
   )
 
-  # 6) Build a data frame for fixed-effects-only predictions
-  #    Use just one arbitrary grouping level (the first) for re.form=NA
+  ## 6) Build a data frame for fixed-effects-only predictions
+  ##    Use just one arbitrary grouping level (the first) for re.form=NA
   df_fixed <- data.frame(
     seq_idx = seq_along(predictor_seq)
   )
@@ -104,7 +104,7 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   df_fixed[[grouping_var]] <- group_levels[1]
   df_fixed$seq_idx <- NULL
 
-  # Add typical values
+  ## Add typical values
   for (v in other_vars) {
     df_fixed[[v]] <- typical_values[[v]]
   }
@@ -112,7 +112,7 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
     model, newdata = df_fixed, type = "link", re.form = NA
   )
 
-  # 7) Apply the link-function transformations based on family & y_scale
+  ## 7) Apply the link-function transformations based on family & y_scale
   transform_eta <- function(eta, fam, scale_choice) {
     if (fam == "binomial") {
       if (is.null(scale_choice)) scale_choice <- "probability"
@@ -161,33 +161,33 @@ plot_glmm <- function(model, data, predictor, outcome, grouping_var,
   df_random$Outcome <- transform_eta(df_random$Eta, family, y_scale)
   df_fixed$Outcome  <- transform_eta(df_fixed$Eta, family, y_scale)
 
-  # 8) Determine y-limits if not provided
+  ## 8) Determine y-limits if not provided
   if (is.null(y_limits)) {
-    # e.g., binomial "probability" or beta "probability"
+    ## binomial "probability" or beta "probability"
     if ((family %in% c("binomial", "beta")) &&
         (is.null(y_scale) || y_scale %in% c("probability"))) {
       y_limits <- c(0, 1)
     } else if (family == "gaussian") {
-      # use range of the actual outcome in the data
+      ## use range of the actual outcome in the data
       y_limits <- range(data[[outcome]], na.rm = TRUE)
     } else {
-      # fallback: range of the predicted outcome
+      ## fallback: range of the predicted outcome
       y_min <- min(df_random$Outcome, na.rm = TRUE)
       y_max <- max(df_random$Outcome, na.rm = TRUE)
-      # don't go below zero for count families
+      ## don't go below zero for count families
       y_limits <- c(max(0, y_min), y_max)
     }
   }
 
-  # 9) Y-axis breaks if not given
+  ## Y-axis breaks if not given
   if (is.null(y_breaks)) {
     y_breaks <- pretty(y_limits)
   }
 
-  # 10) Axis labels, title defaults
+  ## Axis labels, title defaults
   if (is.null(x_label)) x_label <- predictor
   if (is.null(y_label)) {
-    # Provide a family-specific default
+    ## a family-specific default
     y_label <- switch(
       family,
       "binomial" = {
