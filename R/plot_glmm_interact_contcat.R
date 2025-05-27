@@ -244,7 +244,7 @@ plot_glmm_interact_contcat <- function(model, data, predictor_cont, predictor_ca
 
   ## random effects predictions ##
   if (include_random) {
-    grouping_var_levels <- rownames(ranef(model)[[grouping_var]])
+    grouping_var_levels <- rownames(lme4::ranef(model)[[grouping_var]])
     grouping_var_levels <- as.character(grouping_var_levels)
 
     newdata_random <- expand.grid(
