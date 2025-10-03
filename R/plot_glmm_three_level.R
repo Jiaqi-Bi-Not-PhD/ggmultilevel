@@ -218,15 +218,15 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     dplyr::mutate(
       Prediction = transform_eta(Eta, family, y_scale),
       level2_index = as.numeric(.data[[level2_var]]),
-      .predictor = .data[[predictor]],
-      .level2_label = .data[[level2_var]],
-      .level3_label = .data[[level3_var]],
-      custom_level2 = as.character(.level2_label),
-      custom_level3 = as.character(.level3_label),
+      predictor_value = .data[[predictor]],
+      level2_label = .data[[level2_var]],
+      level3_label = .data[[level3_var]],
+      custom_level2 = as.character(level2_label),
+      custom_level3 = as.character(level3_label),
       hover_template = paste0(
         level3_var, ": ", custom_level3, "<br>",
         level2_var, ": ", custom_level2, "<br>",
-        predictor, ": ", .predictor, "<br>",
+        predictor, ": ", predictor_value, "<br>",
         z_label, ": ", Prediction, "<extra></extra>"
       )
     )
@@ -237,7 +237,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   mean_label <- "Mean prediction"
 
   mean_line <- pred_grid |>
-    dplyr::group_by(.predictor) |>
+    dplyr::group_by(predictor_value) |>
     dplyr::summarise(
       Prediction = mean(Prediction, na.rm = TRUE),
       .groups = "drop"
@@ -246,7 +246,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       level2_index = mean_index,
       hover_template = paste0(
         mean_label, "<br>",
-        predictor, ": ", .predictor, "<br>",
+        predictor, ": ", predictor_value, "<br>",
         z_label, ": ", Prediction,
         "<extra></extra>"
       )
@@ -269,10 +269,10 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
 
   plotly::plot_ly(
     data = pred_grid,
-    x = ~.predictor,
+    x = ~predictor_value,
     y = ~level2_index,
     z = ~Prediction,
-    color = ~.level3_label,
+    color = ~level3_label,
     colors = colors,
     type = "scatter3d",
     mode = "lines",
@@ -283,7 +283,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   ) |>
     plotly::add_trace(
       data = mean_line,
-      x = ~.predictor,
+      x = ~predictor_value,
       y = ~level2_index,
       z = ~Prediction,
       type = "scatter3d",
