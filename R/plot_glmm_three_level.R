@@ -210,6 +210,10 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     }
   }
 
+  if (is.null(x_label)) x_label <- predictor
+  if (is.null(y_label)) y_label <- level2_var
+  if (is.null(z_label)) z_label <- outcome
+
   pred_grid <- pred_grid |>
     dplyr::mutate(
       Prediction = transform_eta(Eta, family, y_scale),
@@ -228,10 +232,26 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     )
 
   used_level2 <- level2_levels[level2_levels %in% pred_grid$custom_level2]
+  max_level2_index <- length(level2_levels)
+  mean_index <- max_level2_index + 1
+  mean_label <- "Mean prediction"
 
-  if (is.null(x_label)) x_label <- predictor
-  if (is.null(y_label)) y_label <- level2_var
-  if (is.null(z_label)) z_label <- outcome
+  mean_line <- pred_grid |>
+    dplyr::group_by(.predictor) |>
+    dplyr::summarise(
+      Prediction = mean(Prediction, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(
+      level2_index = mean_index,
+      hover_template = paste0(
+        mean_label, "<br>",
+        predictor, ": ", .predictor, "<br>",
+        z_label, ": ", Prediction,
+        "<extra></extra>"
+      )
+    )
+
   if (is.null(plot_title)) {
     plot_title <- paste0("Three-level predictions for ", outcome)
   }
@@ -240,8 +260,8 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   axis_y <- list(
     title = y_label,
     tickmode = "array",
-    tickvals = match(used_level2, level2_levels),
-    ticktext = used_level2
+    tickvals = c(match(used_level2, level2_levels), mean_index),
+    ticktext = c(used_level2, mean_label)
   )
 
   axis_x <- list(title = x_label, range = x_limits)
@@ -261,6 +281,19 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     hoverinfo = "text",
     hovertemplate = ~hover_template
   ) |>
+    plotly::add_trace(
+      data = mean_line,
+      x = ~.predictor,
+      y = ~level2_index,
+      z = ~Prediction,
+      type = "scatter3d",
+      mode = "lines",
+      name = mean_label,
+      line = list(color = "#000000", width = line_width + 1),
+      hoverinfo = "text",
+      hovertemplate = ~hover_template,
+      showlegend = TRUE
+    ) |>
     plotly::layout(
       title = plot_title,
       legend = list(title = list(text = legend_name)),
