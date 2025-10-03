@@ -218,7 +218,13 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       .level2_label = .data[[level2_var]],
       .level3_label = .data[[level3_var]],
       custom_level2 = as.character(.level2_label),
-      custom_level3 = as.character(.level3_label)
+      custom_level3 = as.character(.level3_label),
+      hover_template = paste0(
+        level3_var, ": ", custom_level3, "<br>",
+        level2_var, ": ", custom_level2, "<br>",
+        predictor, ": ", .predictor, "<br>",
+        z_label, ": ", Prediction, "<extra></extra>"
+      )
     )
 
   used_level2 <- level2_levels[level2_levels %in% pred_grid$custom_level2]
@@ -251,13 +257,9 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     type = "scatter3d",
     mode = "lines",
     line = list(width = line_width),
-    customdata = ~cbind(custom_level2, custom_level3),
-    hovertemplate = paste(
-      paste0(level3_var, ": %{customdata[2]}<br>"),
-      paste0(level2_var, ": %{customdata[1]}<br>"),
-      paste0(predictor, ": %{x}<br>"),
-      paste0(z_label, ": %{z}<extra></extra>")
-    )
+    text = ~hover_template,
+    hoverinfo = "text",
+    hovertemplate = ~hover_template
   ) |>
     plotly::layout(
       title = plot_title,
