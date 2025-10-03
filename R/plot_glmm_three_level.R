@@ -46,9 +46,9 @@
 #' @examples
 #' \dontrun{
 #'   set.seed(123)
-#'   n_school <- 5
-#'   n_class <- 6
-#'   n_student <- 15
+#'   n_school <- 3
+#'   n_class <- 4
+#'   n_student <- 12
 #'
 #'   school <- factor(rep(seq_len(n_school), each = n_class * n_student))
 #'   classroom_within_school <- rep(rep(seq_len(n_class), each = n_student),
@@ -56,10 +56,10 @@
 #'   classroom <- factor(paste0("S", school, "_C", classroom_within_school))
 #'   time <- rep(seq(0, 5, length.out = n_student), times = n_school * n_class)
 #'
-#'   school_intercept <- rnorm(n_school, sd = 0.8)[school]
-#'   class_intercept <- rnorm(n_school * n_class, sd = 0.5)[classroom]
-#'   school_slope <- rnorm(n_school, sd = 0.12)[school]
-#'   class_slope <- rnorm(n_school * n_class, sd = 0.08)[classroom]
+#'   school_intercept <- rnorm(n_school, sd = 0.7)[school]
+#'   class_intercept <- rnorm(n_school * n_class, sd = 0.4)[classroom]
+#'   school_slope <- rnorm(n_school, sd = 0.1)[school]
+#'   class_slope <- rnorm(n_school * n_class, sd = 0.05)[classroom]
 #'
 #'   linear_predictor <- 2 + school_intercept + class_intercept +
 #'     (0.3 + school_slope + class_slope) * time
@@ -73,7 +73,7 @@
 #'   )
 #'
 #'   three_level_model <- lme4::lmer(
-#'     score ~ time + (1 + time | school) + (1 + time | classroom),
+#'     score ~ time + (time | school/classroom),
 #'     data = sim_data
 #'   )
 #'
@@ -218,13 +218,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       .level2_label = .data[[level2_var]],
       .level3_label = .data[[level3_var]],
       custom_level2 = as.character(.level2_label),
-      custom_level3 = as.character(.level3_label),
-      hover_text = paste0(
-        level3_var, ": ", custom_level3, "<br>",
-        level2_var, ": ", custom_level2, "<br>",
-        predictor, ": ", .predictor, "<br>",
-        z_label, ": ", round(Prediction, 3)
-      )
+      custom_level3 = as.character(.level3_label)
     )
 
   used_level2 <- level2_levels[level2_levels %in% pred_grid$custom_level2]
@@ -257,9 +251,13 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     type = "scatter3d",
     mode = "lines",
     line = list(width = line_width),
-    text = ~hover_text,
-    hoverinfo = "text",
-    hovertemplate = "%{text}<extra></extra>"
+    customdata = ~cbind(custom_level2, custom_level3),
+    hovertemplate = paste(
+      paste0(level3_var, ": %{customdata[2]}<br>"),
+      paste0(level2_var, ": %{customdata[1]}<br>"),
+      paste0(predictor, ": %{x}<br>"),
+      paste0(z_label, ": %{z}<extra></extra>")
+    )
   ) |>
     plotly::layout(
       title = plot_title,
