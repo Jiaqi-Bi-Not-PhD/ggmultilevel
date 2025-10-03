@@ -15,6 +15,7 @@ Imports:
     haven,
     lme4,
     lmerTest,
+    plotly,
     purrr,
     rlang,
     scales,
