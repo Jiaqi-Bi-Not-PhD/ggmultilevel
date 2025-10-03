@@ -210,22 +210,48 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     }
   }
 
+  if (is.null(x_label)) x_label <- predictor
+  if (is.null(y_label)) y_label <- level2_var
+  if (is.null(z_label)) z_label <- outcome
+
   pred_grid <- pred_grid |>
     dplyr::mutate(
       Prediction = transform_eta(Eta, family, y_scale),
       level2_index = as.numeric(.data[[level2_var]]),
-      .predictor = .data[[predictor]],
-      .level2_label = .data[[level2_var]],
-      .level3_label = .data[[level3_var]],
-      custom_level2 = as.character(.level2_label),
-      custom_level3 = as.character(.level3_label)
+      predictor_value = .data[[predictor]],
+      level2_label = .data[[level2_var]],
+      level3_label = .data[[level3_var]],
+      custom_level2 = as.character(level2_label),
+      custom_level3 = as.character(level3_label),
+      hover_template = paste0(
+        level3_var, ": ", custom_level3, "<br>",
+        level2_var, ": ", custom_level2, "<br>",
+        predictor, ": ", predictor_value, "<br>",
+        z_label, ": ", Prediction, "<extra></extra>"
+      )
     )
 
   used_level2 <- level2_levels[level2_levels %in% pred_grid$custom_level2]
+  max_level2_index <- length(level2_levels)
+  mean_index <- max_level2_index + 1
+  mean_label <- "Mean prediction"
 
-  if (is.null(x_label)) x_label <- predictor
-  if (is.null(y_label)) y_label <- level2_var
-  if (is.null(z_label)) z_label <- outcome
+  mean_line <- pred_grid |>
+    dplyr::group_by(predictor_value) |>
+    dplyr::summarise(
+      Prediction = mean(Prediction, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(
+      level2_index = mean_index,
+      hover_template = paste0(
+        mean_label, "<br>",
+        predictor, ": ", predictor_value, "<br>",
+        z_label, ": ", Prediction,
+        "<extra></extra>"
+      )
+    )
+
   if (is.null(plot_title)) {
     plot_title <- paste0("Three-level predictions for ", outcome)
   }
@@ -234,8 +260,8 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   axis_y <- list(
     title = y_label,
     tickmode = "array",
-    tickvals = match(used_level2, level2_levels),
-    ticktext = used_level2
+    tickvals = c(match(used_level2, level2_levels), mean_index),
+    ticktext = c(used_level2, mean_label)
   )
 
   axis_x <- list(title = x_label, range = x_limits)
@@ -243,22 +269,31 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
 
   plotly::plot_ly(
     data = pred_grid,
-    x = ~.predictor,
+    x = ~predictor_value,
     y = ~level2_index,
     z = ~Prediction,
-    color = ~.level3_label,
+    color = ~level3_label,
     colors = colors,
     type = "scatter3d",
     mode = "lines",
     line = list(width = line_width),
-    customdata = ~cbind(custom_level2, custom_level3),
-    hovertemplate = paste(
-      paste0(level3_var, ": %{customdata[2]}<br>"),
-      paste0(level2_var, ": %{customdata[1]}<br>"),
-      paste0(predictor, ": %{x}<br>"),
-      paste0(z_label, ": %{z}<extra></extra>")
-    )
+    text = ~hover_template,
+    hoverinfo = "text",
+    hovertemplate = ~hover_template
   ) |>
+    plotly::add_trace(
+      data = mean_line,
+      x = ~predictor_value,
+      y = ~level2_index,
+      z = ~Prediction,
+      type = "scatter3d",
+      mode = "lines",
+      name = mean_label,
+      line = list(color = "#000000", width = line_width + 1),
+      hoverinfo = "text",
+      hovertemplate = ~hover_template,
+      showlegend = TRUE
+    ) |>
     plotly::layout(
       title = plot_title,
       legend = list(title = list(text = legend_name)),
