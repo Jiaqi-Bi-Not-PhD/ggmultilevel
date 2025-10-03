@@ -1,0 +1,271 @@
+#' Visualize predictions from a three-level multilevel model
+#'
+#' @description
+#' `plot_glmm_three_level()` extends the existing plotting utilities to models
+#' with two nested grouping variables (e.g., students within classrooms within
+#' schools). It produces an interactive three-dimensional visualization that
+#' displays the predicted outcome across the focal predictor, second-level
+#' clusters, and the third-level clusters that contain them.
+#'
+#' @param model A fitted multilevel model of class `lmer`, `glmer`, or
+#'   `glmmTMB`.
+#' @param data A data frame that contains the variables used to fit `model`.
+#' @param predictor The focal predictor to display on the x-axis, supplied as a
+#'   string.
+#' @param outcome The outcome variable from the fitted model, supplied as a
+#'   string. Used for axis labelling when `z_label` is not provided.
+#' @param level2_var The second-level grouping variable (e.g., classroom),
+#'   supplied as a string.
+#' @param level3_var The third-level grouping variable (e.g., school), supplied
+#'   as a string.
+#' @param family A character string identifying the distribution used when
+#'   fitting `model`. Supported families are `"gaussian"`, `"binomial"`,
+#'   `"poisson"`, `"Gamma"`, `"beta"`, and `"negative binomial"`.
+#' @param y_scale Optional specification of the transformation for the
+#'   predictions, matched to the supplied `family`. Defaults mirror the response
+#'   scale for each family.
+#' @param include_random Logical; if `TRUE` (default) predictions incorporate the
+#'   random effects associated with `level2_var` and `level3_var`. Set to `FALSE`
+#'   to show only the fixed-effects surface.
+#' @param x_limits Optional numeric vector of length two that constrains the
+#'   predictor range.
+#' @param x_label Optional label for the x-axis. Defaults to `predictor`.
+#' @param y_label Optional label for the y-axis. Defaults to `level2_var`.
+#' @param z_label Optional label for the z-axis. Defaults to `outcome`.
+#' @param plot_title Optional plot title.
+#' @param colors Optional vector of colours used to distinguish the
+#'   third-level clusters.
+#' @param legend_name Optional legend title. Defaults to `level3_var`.
+#' @param line_width Numeric width of the trajectories drawn for each
+#'   second-level cluster. Defaults to `2`.
+#'
+#' @return A `plotly` object that renders a three-dimensional visualization of
+#'   the model-implied trajectories across the two grouping levels.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   set.seed(123)
+#'   n_school <- 3
+#'   n_class <- 4
+#'   n_student <- 12
+#'
+#'   school <- factor(rep(seq_len(n_school), each = n_class * n_student))
+#'   classroom_within_school <- rep(rep(seq_len(n_class), each = n_student),
+#'                                  times = n_school)
+#'   classroom <- factor(paste0("S", school, "_C", classroom_within_school))
+#'   time <- rep(seq(0, 5, length.out = n_student), times = n_school * n_class)
+#'
+#'   school_intercept <- rnorm(n_school, sd = 0.7)[school]
+#'   class_intercept <- rnorm(n_school * n_class, sd = 0.4)[classroom]
+#'   school_slope <- rnorm(n_school, sd = 0.1)[school]
+#'   class_slope <- rnorm(n_school * n_class, sd = 0.05)[classroom]
+#'
+#'   linear_predictor <- 2 + school_intercept + class_intercept +
+#'     (0.3 + school_slope + class_slope) * time
+#'   score <- linear_predictor + rnorm(length(linear_predictor), sd = 1)
+#'
+#'   sim_data <- data.frame(
+#'     school = school,
+#'     classroom = classroom,
+#'     time = time,
+#'     score = score
+#'   )
+#'
+#'   three_level_model <- lme4::lmer(
+#'     score ~ time + (time | school/classroom),
+#'     data = sim_data
+#'   )
+#'
+#'   plot_glmm_three_level(model = three_level_model,
+#'                         data = sim_data,
+#'                         predictor = "time",
+#'                         outcome = "score",
+#'                         level2_var = "classroom",
+#'                         level3_var = "school")
+#' }
+plot_glmm_three_level <- function(model, data, predictor, outcome,
+                                  level2_var, level3_var,
+                                  family = "gaussian", y_scale = NULL,
+                                  include_random = TRUE,
+                                  x_limits = NULL,
+                                  x_label = NULL, y_label = NULL,
+                                  z_label = NULL,
+                                  plot_title = NULL,
+                                  colors = NULL, legend_name = NULL,
+                                  line_width = 2) {
+
+  predictor_sym <- rlang::sym(predictor)
+  level2_sym <- rlang::sym(level2_var)
+  level3_sym <- rlang::sym(level3_var)
+
+  data[[level2_var]] <- as.factor(data[[level2_var]])
+  data[[level3_var]] <- as.factor(data[[level3_var]])
+
+  data <- data |>
+    dplyr::filter(!is.na(.data[[predictor]]),
+                  !is.na(.data[[level2_var]]),
+                  !is.na(.data[[level3_var]]))
+
+  data[[level2_var]] <- droplevels(data[[level2_var]])
+  data[[level3_var]] <- droplevels(data[[level3_var]])
+
+  level2_levels <- levels(data[[level2_var]])
+
+  predictor_vals <- data[[predictor]]
+  if (is.null(x_limits)) {
+    x_min <- floor(min(predictor_vals, na.rm = TRUE))
+    x_max <- ceiling(max(predictor_vals, na.rm = TRUE))
+    x_limits <- c(x_min, x_max)
+  } else {
+    x_min <- x_limits[1]
+    x_max <- x_limits[2]
+  }
+  predictor_seq <- seq(x_min, x_max, length.out = 100)
+
+  all_predictors <- attr(terms(model), "term.labels")
+  grouping_vars <- unique(c(level2_var, level3_var))
+  other_vars <- setdiff(all_predictors, c(predictor, grouping_vars))
+
+  typical_values <- lapply(other_vars, function(v) {
+    col_data <- data[[v]]
+    if (is.numeric(col_data)) {
+      mean(col_data, na.rm = TRUE)
+    } else if (is.factor(col_data)) {
+      levels(col_data)[1]
+    } else {
+      unique(col_data)[1]
+    }
+  })
+  names(typical_values) <- other_vars
+
+  if (include_random) {
+    nesting <- data |>
+      dplyr::distinct(!!level3_sym, !!level2_sym)
+  } else {
+    nesting <- data |>
+      dplyr::distinct(!!level3_sym, !!level2_sym) |>
+      dplyr::slice(1)
+  }
+
+  pred_grid <- tidyr::expand_grid(
+    nesting,
+    !!predictor_sym := predictor_seq
+  )
+
+  for (v in other_vars) {
+    pred_grid[[v]] <- typical_values[[v]]
+  }
+
+  re_form <- if (include_random) NULL else NA
+  pred_grid$Eta <- stats::predict(
+    model,
+    newdata = pred_grid,
+    type = "link",
+    re.form = re_form,
+    allow.new.levels = FALSE
+  )
+
+  transform_eta <- function(eta, fam, scale_choice) {
+    if (fam == "binomial") {
+      if (is.null(scale_choice)) scale_choice <- "probability"
+      switch(scale_choice,
+             "probability" = stats::plogis(eta),
+             "odds" = exp(eta),
+             "log odds" = eta,
+             stop("For binomial: y_scale must be 'probability', 'odds', or 'log odds'.")
+      )
+    } else if (fam == "poisson") {
+      if (is.null(scale_choice)) scale_choice <- "count"
+      switch(scale_choice,
+             "count" = exp(eta),
+             "log count" = eta,
+             stop("For Poisson: y_scale must be 'count' or 'log count'.")
+      )
+    } else if (fam == "gaussian") {
+      eta
+    } else if (fam == "Gamma") {
+      if (is.null(scale_choice)) scale_choice <- "response"
+      switch(scale_choice,
+             "response" = exp(eta),
+             "log response" = eta,
+             stop("For Gamma: y_scale must be 'response' or 'log response'.")
+      )
+    } else if (fam == "beta") {
+      if (is.null(scale_choice)) scale_choice <- "probability"
+      switch(scale_choice,
+             "probability" = stats::plogis(eta),
+             "logit" = eta,
+             stop("For beta: y_scale must be 'probability' or 'logit'.")
+      )
+    } else if (fam == "negative binomial") {
+      if (is.null(scale_choice)) scale_choice <- "count"
+      switch(scale_choice,
+             "count" = exp(eta),
+             "log count" = eta,
+             stop("For Negative Binomial: y_scale must be 'count' or 'log count'.")
+      )
+    } else {
+      stop("Unsupported family. Supported families: 'gaussian', 'binomial', 'poisson', 'Gamma', 'beta', 'negative binomial'.")
+    }
+  }
+
+  pred_grid <- pred_grid |>
+    dplyr::mutate(
+      Prediction = transform_eta(Eta, family, y_scale),
+      level2_index = as.numeric(.data[[level2_var]]),
+      .predictor = .data[[predictor]],
+      .level2_label = .data[[level2_var]],
+      .level3_label = .data[[level3_var]],
+      custom_level2 = as.character(.level2_label),
+      custom_level3 = as.character(.level3_label)
+    )
+
+  used_level2 <- level2_levels[level2_levels %in% pred_grid$custom_level2]
+
+  if (is.null(x_label)) x_label <- predictor
+  if (is.null(y_label)) y_label <- level2_var
+  if (is.null(z_label)) z_label <- outcome
+  if (is.null(plot_title)) {
+    plot_title <- paste0("Three-level predictions for ", outcome)
+  }
+  if (is.null(legend_name)) legend_name <- level3_var
+
+  axis_y <- list(
+    title = y_label,
+    tickmode = "array",
+    tickvals = match(used_level2, level2_levels),
+    ticktext = used_level2
+  )
+
+  axis_x <- list(title = x_label, range = x_limits)
+  axis_z <- list(title = z_label)
+
+  plotly::plot_ly(
+    data = pred_grid,
+    x = ~.predictor,
+    y = ~level2_index,
+    z = ~Prediction,
+    color = ~.level3_label,
+    colors = colors,
+    type = "scatter3d",
+    mode = "lines",
+    line = list(width = line_width),
+    customdata = ~cbind(custom_level2, custom_level3),
+    hovertemplate = paste(
+      paste0(level3_var, ": %{customdata[2]}<br>"),
+      paste0(level2_var, ": %{customdata[1]}<br>"),
+      paste0(predictor, ": %{x}<br>"),
+      paste0(z_label, ": %{z}<extra></extra>")
+    )
+  ) |>
+    plotly::layout(
+      title = plot_title,
+      legend = list(title = list(text = legend_name)),
+      scene = list(
+        xaxis = axis_x,
+        yaxis = axis_y,
+        zaxis = axis_z
+      )
+    )
+}
