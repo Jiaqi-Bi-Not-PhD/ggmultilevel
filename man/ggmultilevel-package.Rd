@@ -4,8 +4,12 @@
 \name{ggmultilevel-package}
 \alias{ggmultilevel}
 \alias{ggmultilevel-package}
-\title{ggmultilevel: A visualization package for multilevel models (Beta version)}
+\title{ggmultilevel: A visualization package for multilevel models (Test version)}
 \description{
 The package provides easy visualizations on the multilevel models without writing hundreds of code.
+}
+\author{
+\strong{Maintainer}: Jiaqi Bi \email{jbi23@uwo.ca} (\href{https://orcid.org/0009-0001-9216-9932}{ORCID})
+
 }
 \keyword{internal}

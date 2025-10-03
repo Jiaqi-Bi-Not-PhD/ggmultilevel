@@ -56,6 +56,9 @@ plot_glmm(
 
 \item{y_num_size}{Set the y-axis value size}
 }
+\value{
+a plot
+}
 \description{
 Title
 }
