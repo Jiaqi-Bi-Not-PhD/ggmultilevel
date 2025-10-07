@@ -238,6 +238,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       predictor_value = .data[[predictor]],
       custom_level2 = as.character(level2_label),
       custom_level3 = as.character(level3_label),
+      trace_id = as.character(interaction(level3_label, level2_label, drop = TRUE)),
       hover_template = paste0(
         level3_var, ": ", custom_level3, "<br>",
         level2_var, ": ", custom_level2, "<br>",
@@ -282,11 +283,12 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   axis_x <- list(title = x_label, range = x_limits)
   axis_z <- list(title = z_label)
 
-  plotly::plot_ly(
+  plot_obj <- plotly::plot_ly(
     data = pred_grid,
     x = ~predictor_value,
     y = ~level2_index,
     z = ~Prediction,
+    split = ~trace_id,
     color = ~level3_label,
     colors = colors,
     type = "scatter3d",
@@ -294,7 +296,9 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     line = list(width = line_width),
     text = ~hover_template,
     hoverinfo = "text",
-    hovertemplate = ~hover_template
+    hovertemplate = ~hover_template,
+    legendgroup = ~level3_label,
+    name = ~level3_label
   ) |>
     plotly::add_trace(
       data = mean_line,
@@ -307,7 +311,8 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       line = list(color = "#000000", width = line_width + 1),
       hoverinfo = "text",
       hovertemplate = ~hover_template,
-      showlegend = TRUE
+      showlegend = TRUE,
+      inherit = FALSE
     ) |>
     plotly::layout(
       title = plot_title,
@@ -318,4 +323,23 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
         zaxis = axis_z
       )
     )
+
+  if (!is.null(plot_obj$x$data)) {
+    seen_groups <- character()
+    for (i in seq_along(plot_obj$x$data)) {
+      trace <- plot_obj$x$data[[i]]
+      if (!is.null(trace$legendgroup)) {
+        group <- trace$legendgroup
+        if (group %in% seen_groups) {
+          trace$showlegend <- FALSE
+        } else {
+          trace$showlegend <- TRUE
+          seen_groups <- c(seen_groups, group)
+        }
+        plot_obj$x$data[[i]] <- trace
+      }
+    }
+  }
+
+  plot_obj
 }
