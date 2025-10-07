@@ -162,6 +162,11 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     )
   }
 
+  nesting <- nesting |>
+    dplyr::group_by(!!level3_sym) |>
+    dplyr::mutate(show_level3_legend = dplyr::row_number() == 1) |>
+    dplyr::ungroup()
+
   n_predictor <- length(predictor_seq)
   n_groups <- nrow(nesting)
 
@@ -238,6 +243,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       predictor_value = .data[[predictor]],
       custom_level2 = as.character(level2_label),
       custom_level3 = as.character(level3_label),
+      trace_id = as.character(interaction(level3_label, level2_label, drop = TRUE)),
       hover_template = paste0(
         level3_var, ": ", custom_level3, "<br>",
         level2_var, ": ", custom_level2, "<br>",
@@ -282,11 +288,12 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   axis_x <- list(title = x_label, range = x_limits)
   axis_z <- list(title = z_label)
 
-  plotly::plot_ly(
+  plot_obj <- plotly::plot_ly(
     data = pred_grid,
     x = ~predictor_value,
     y = ~level2_index,
     z = ~Prediction,
+    split = ~trace_id,
     color = ~level3_label,
     colors = colors,
     type = "scatter3d",
@@ -294,7 +301,10 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     line = list(width = line_width),
     text = ~hover_template,
     hoverinfo = "text",
-    hovertemplate = ~hover_template
+    hovertemplate = ~hover_template,
+    legendgroup = ~level3_label,
+    name = ~level3_label,
+    showlegend = ~show_level3_legend
   ) |>
     plotly::add_trace(
       data = mean_line,
@@ -307,7 +317,8 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       line = list(color = "#000000", width = line_width + 1),
       hoverinfo = "text",
       hovertemplate = ~hover_template,
-      showlegend = TRUE
+      showlegend = TRUE,
+      inherit = FALSE
     ) |>
     plotly::layout(
       title = plot_title,
@@ -318,4 +329,16 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
         zaxis = axis_z
       )
     )
+
+  plot_obj$x$data <- lapply(plot_obj$x$data, function(trace) {
+    if (is.null(trace$showlegend)) {
+      return(trace)
+    }
+    if (length(trace$showlegend) > 1) {
+      trace$showlegend <- trace$showlegend[1]
+    }
+    trace
+  })
+
+  plot_obj
 }
