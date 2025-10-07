@@ -329,22 +329,25 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       )
     )
 
-  if (!is.null(plot_obj$x$data)) {
-    seen_groups <- character()
-    for (i in seq_along(plot_obj$x$data)) {
-      trace <- plot_obj$x$data[[i]]
-      if (!is.null(trace$legendgroup)) {
-        group <- trace$legendgroup
-        if (group %in% seen_groups) {
-          trace$showlegend <- FALSE
-        } else {
-          trace$showlegend <- TRUE
-          seen_groups <- c(seen_groups, group)
-        }
-        plot_obj$x$data[[i]] <- trace
-      }
+  trace_levels <- unique(pred_grid$trace_id)
+
+  trace_meta <- pred_grid |>
+    dplyr::distinct(trace_id, level3_label, show_level3_legend) |>
+    dplyr::mutate(
+      trace_order = match(trace_id, trace_levels)
+    ) |>
+    dplyr::arrange(trace_order)
+
+  built_plot <- plotly::plotly_build(plot_obj)
+
+  trace_index <- 1L
+  for (i in seq_along(built_plot$x$data)) {
+    trace <- built_plot$x$data[[i]]
+    if (!is.null(trace$legendgroup) && trace_index <= nrow(trace_meta)) {
+      built_plot$x$data[[i]]$showlegend <- trace_meta$show_level3_legend[trace_index]
+      trace_index <- trace_index + 1L
     }
   }
 
-  plot_obj
+  built_plot
 }
