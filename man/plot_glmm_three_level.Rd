@@ -87,9 +87,9 @@ clusters, and the third-level clusters that contain them.
 \examples{
 \dontrun{
   set.seed(123)
-  n_school <- 3
-  n_class <- 4
-  n_student <- 12
+  n_school <- 8
+  n_class <- 5
+  n_student <- 20
 
   school <- factor(rep(seq_len(n_school), each = n_class * n_student))
   classroom_within_school <- rep(rep(seq_len(n_class), each = n_student),
@@ -97,14 +97,14 @@ clusters, and the third-level clusters that contain them.
   classroom <- factor(paste0("S", school, "_C", classroom_within_school))
   time <- rep(seq(0, 5, length.out = n_student), times = n_school * n_class)
 
-  school_intercept <- rnorm(n_school, sd = 0.7)[school]
-  class_intercept <- rnorm(n_school * n_class, sd = 0.4)[classroom]
-  school_slope <- rnorm(n_school, sd = 0.1)[school]
-  class_slope <- rnorm(n_school * n_class, sd = 0.05)[classroom]
+  school_intercept <- rnorm(n_school, sd = 1)[school]
+  class_intercept <- rnorm(n_school * n_class, sd = 0.6)[classroom]
+  school_slope <- rnorm(n_school, sd = 0.2)[school]
+  class_slope <- rnorm(n_school * n_class, sd = 0.1)[classroom]
 
   linear_predictor <- 2 + school_intercept + class_intercept +
     (0.3 + school_slope + class_slope) * time
-  score <- linear_predictor + rnorm(length(linear_predictor), sd = 1)
+  score <- linear_predictor + rnorm(length(linear_predictor), sd = 1.2)
 
   sim_data <- data.frame(
     school = school,
