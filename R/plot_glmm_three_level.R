@@ -217,10 +217,10 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   pred_grid <- pred_grid |>
     dplyr::mutate(
       Prediction = transform_eta(Eta, family, y_scale),
-      level2_label = .data[[level2_var]],
-      level3_label = .data[[level3_var]],
+      level2_label = !!level2_sym,
+      level3_label = !!level3_sym,
       level2_index = as.numeric(level2_label),
-      predictor_value = .data[[predictor]],
+      predictor_value = !!predictor_sym,
       custom_level2 = as.character(level2_label),
       custom_level3 = as.character(level3_label),
       hover_template = paste0(
