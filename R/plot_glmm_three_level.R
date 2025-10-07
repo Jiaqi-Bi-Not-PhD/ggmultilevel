@@ -335,12 +335,24 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       trace <- plot_obj$x$data[[i]]
       if (!is.null(trace$legendgroup)) {
         group <- trace$legendgroup
+        if (length(group) == 0) {
+          next
+        }
+
+        group <- group[1]
+        trace$legendgroup <- group
+
+        if (!is.null(trace$name)) {
+          trace$name <- trace$name[1]
+        }
+
         if (group %in% seen_groups) {
           trace$showlegend <- FALSE
         } else {
           trace$showlegend <- TRUE
           seen_groups <- c(seen_groups, group)
         }
+
         plot_obj$x$data[[i]] <- trace
       }
     }
