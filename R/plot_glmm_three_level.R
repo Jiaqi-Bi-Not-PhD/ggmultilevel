@@ -330,10 +330,12 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       )
     )
 
-  if (!is.null(plot_obj$x$data)) {
+  built_plot <- plotly::plotly_build(plot_obj)
+
+  if (!is.null(built_plot$x$data)) {
     seen_groups <- character()
-    for (i in seq_along(plot_obj$x$data)) {
-      trace <- plot_obj$x$data[[i]]
+    for (i in seq_along(built_plot$x$data)) {
+      trace <- built_plot$x$data[[i]]
       if (!is.null(trace$legendgroup)) {
         group <- trace$legendgroup
         if (length(group) == 0) {
@@ -354,7 +356,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
           seen_groups <- c(seen_groups, group)
         }
 
-        plot_obj$x$data[[i]] <- trace
+        built_plot$x$data[[i]] <- trace
       }
     }
   }
