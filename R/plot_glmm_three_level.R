@@ -46,9 +46,9 @@
 #' @examples
 #' \dontrun{
 #'   set.seed(123)
-#'   n_school <- 3
-#'   n_class <- 4
-#'   n_student <- 12
+#'   n_school <- 8
+#'   n_class <- 5
+#'   n_student <- 20
 #'
 #'   school <- factor(rep(seq_len(n_school), each = n_class * n_student))
 #'   classroom_within_school <- rep(rep(seq_len(n_class), each = n_student),
@@ -56,14 +56,14 @@
 #'   classroom <- factor(paste0("S", school, "_C", classroom_within_school))
 #'   time <- rep(seq(0, 5, length.out = n_student), times = n_school * n_class)
 #'
-#'   school_intercept <- rnorm(n_school, sd = 0.7)[school]
-#'   class_intercept <- rnorm(n_school * n_class, sd = 0.4)[classroom]
-#'   school_slope <- rnorm(n_school, sd = 0.1)[school]
-#'   class_slope <- rnorm(n_school * n_class, sd = 0.05)[classroom]
+#'   school_intercept <- rnorm(n_school, sd = 1)[school]
+#'   class_intercept <- rnorm(n_school * n_class, sd = 0.6)[classroom]
+#'   school_slope <- rnorm(n_school, sd = 0.2)[school]
+#'   class_slope <- rnorm(n_school * n_class, sd = 0.1)[classroom]
 #'
 #'   linear_predictor <- 2 + school_intercept + class_intercept +
 #'     (0.3 + school_slope + class_slope) * time
-#'   score <- linear_predictor + rnorm(length(linear_predictor), sd = 1)
+#'   score <- linear_predictor + rnorm(length(linear_predictor), sd = 1.2)
 #'
 #'   sim_data <- data.frame(
 #'     school = school,
@@ -141,17 +141,32 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
 
   if (include_random) {
     nesting <- data |>
-      dplyr::distinct(!!level3_sym, !!level2_sym)
-  } else {
-    nesting <- data |>
       dplyr::distinct(!!level3_sym, !!level2_sym) |>
-      dplyr::slice(1)
+      dplyr::arrange(!!level3_sym, !!level2_sym)
+  } else {
+    nesting <- data.frame(
+      setNames(
+        list(
+          factor(
+            levels(data[[level3_var]])[1],
+            levels = levels(data[[level3_var]])
+          ),
+          factor(
+            levels(data[[level2_var]])[1],
+            levels = levels(data[[level2_var]])
+          )
+        ),
+        c(level3_var, level2_var)
+      ),
+      check.names = FALSE
+    )
   }
 
-  pred_grid <- tidyr::expand_grid(
-    nesting,
-    !!predictor_sym := predictor_seq
-  )
+  n_predictor <- length(predictor_seq)
+  n_groups <- nrow(nesting)
+
+  pred_grid <- nesting[rep(seq_len(n_groups), each = n_predictor), , drop = FALSE]
+  pred_grid[[predictor]] <- rep(predictor_seq, times = n_groups)
 
   for (v in other_vars) {
     pred_grid[[v]] <- typical_values[[v]]
@@ -217,10 +232,10 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   pred_grid <- pred_grid |>
     dplyr::mutate(
       Prediction = transform_eta(Eta, family, y_scale),
-      level2_label = !!level2_sym,
-      level3_label = !!level3_sym,
+      level2_label = .data[[level2_var]],
+      level3_label = .data[[level3_var]],
       level2_index = as.numeric(level2_label),
-      predictor_value = !!predictor_sym,
+      predictor_value = .data[[predictor]],
       custom_level2 = as.character(level2_label),
       custom_level3 = as.character(level3_label),
       hover_template = paste0(
