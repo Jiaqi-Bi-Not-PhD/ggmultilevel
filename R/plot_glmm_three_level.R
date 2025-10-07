@@ -302,6 +302,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     text = ~hover_template,
     hoverinfo = "text",
     hovertemplate = ~hover_template,
+    showlegend = ~show_level3_legend,
     legendgroup = ~level3_label,
     name = ~level3_label
   ) |>
@@ -358,5 +359,5 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     }
   }
 
-  plot_obj
+  built_plot
 }
