@@ -342,11 +342,23 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
           next
         }
 
-        group <- group[1]
-        trace$legendgroup <- group
+        if (is.list(group)) {
+          group <- group[[1]]
+        }
+        if (length(group) > 1) {
+          group <- group[1]
+        }
+        trace$legendgroup <- as.character(group)
 
         if (!is.null(trace$name)) {
-          trace$name <- trace$name[1]
+          name_value <- trace$name
+          if (is.list(name_value)) {
+            name_value <- name_value[[1]]
+          }
+          if (length(name_value) > 1) {
+            name_value <- name_value[1]
+          }
+          trace$name <- as.character(name_value)
         }
 
         if (group %in% seen_groups) {
@@ -354,6 +366,17 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
         } else {
           trace$showlegend <- TRUE
           seen_groups <- c(seen_groups, group)
+        }
+
+        if (!is.null(trace$showlegend) && length(trace$showlegend) > 1) {
+          show_value <- trace$showlegend
+          if (is.list(show_value)) {
+            show_value <- show_value[[1]]
+          }
+          if (length(show_value) > 1) {
+            show_value <- show_value[1]
+          }
+          trace$showlegend <- isTRUE(show_value)
         }
 
         built_plot$x$data[[i]] <- trace
