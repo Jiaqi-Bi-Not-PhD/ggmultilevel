@@ -307,7 +307,8 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
       line = list(color = "#000000", width = line_width + 1),
       hoverinfo = "text",
       hovertemplate = ~hover_template,
-      showlegend = TRUE
+      showlegend = TRUE,
+      inherit = FALSE
     ) |>
     plotly::layout(
       title = plot_title,
