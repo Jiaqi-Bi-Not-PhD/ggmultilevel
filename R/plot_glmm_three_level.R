@@ -162,6 +162,11 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
     )
   }
 
+  nesting <- nesting |>
+    dplyr::group_by(!!level3_sym) |>
+    dplyr::mutate(show_level3_legend = dplyr::row_number() == 1) |>
+    dplyr::ungroup()
+
   n_predictor <- length(predictor_seq)
   n_groups <- nrow(nesting)
 
