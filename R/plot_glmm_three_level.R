@@ -288,7 +288,7 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
   axis_x <- list(title = x_label, range = x_limits)
   axis_z <- list(title = z_label)
 
-  plotly::plot_ly(
+  plot_obj <- plotly::plot_ly(
     data = pred_grid,
     x = ~predictor_value,
     y = ~level2_index,
@@ -329,4 +329,16 @@ plot_glmm_three_level <- function(model, data, predictor, outcome,
         zaxis = axis_z
       )
     )
+
+  plot_obj$x$data <- lapply(plot_obj$x$data, function(trace) {
+    if (is.null(trace$showlegend)) {
+      return(trace)
+    }
+    if (length(trace$showlegend) > 1) {
+      trace$showlegend <- trace$showlegend[1]
+    }
+    trace
+  })
+
+  plot_obj
 }
